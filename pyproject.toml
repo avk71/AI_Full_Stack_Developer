@@ -4,4 +4,9 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "google>=3.0.0",
+    "llama-index>=0.10.68",
+    "openai>=2.1.0",
+    "python-dotenv>=1.1.1",
+]
