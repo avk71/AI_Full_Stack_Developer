@@ -10,4 +10,5 @@ dependencies = [
     "llama-index>=0.10.68",
     "openai>=2.1.0",
     "python-dotenv>=1.1.1",
+    "scikit-learn>=1.7.2",
 ]
