@@ -8,6 +8,7 @@ dependencies = [
     "display>=1.0.0",
     "google>=3.0.0",
     "google-genai>=1.41.0",
+    "huggingface-hub[hf-xet]>=0.35.3",
     "ipython>=9.6.0",
     "jedi>=0.19.2",
     "langchain>=0.3.27",
