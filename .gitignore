@@ -8,6 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+Python312/.venv/
+__pycache__/
+*.pyc
+
 
 # Environment API keys and settings
 .env
