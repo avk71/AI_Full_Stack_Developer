@@ -10,6 +10,4 @@ dependencies = [
     "llama-index>=0.14.5",
     "llama-index-llms-openai>=0.6.5",
     "llama-index-llms-perplexity>=0.4.2",
-    "openai>=1.109.1",
-    "pypdf>=6.1.2",
 ]
