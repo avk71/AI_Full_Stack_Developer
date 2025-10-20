@@ -1,0 +1,221 @@
+  ├Ч No solution found when resolving dependencies:
+  тХ░тФАтЦ╢ Because only the following versions of llama-index are available:
+          llama-index<=0.11.15
+          llama-index==0.11.16
+          llama-index==0.11.17
+          llama-index==0.11.18
+          llama-index==0.11.19
+          llama-index==0.11.20
+          llama-index==0.11.21
+          llama-index==0.11.22
+          llama-index==0.11.23
+          llama-index==0.12.0
+          llama-index==0.12.1
+          llama-index==0.12.2
+          llama-index==0.12.3
+          llama-index==0.12.4
+          llama-index==0.12.5
+          llama-index==0.12.6
+          llama-index==0.12.7
+          llama-index==0.12.8
+          llama-index==0.12.9
+          llama-index==0.12.10
+          llama-index==0.12.11
+          llama-index==0.12.12
+          llama-index==0.12.13
+          llama-index==0.12.14
+          llama-index==0.12.15
+          llama-index==0.12.16
+          llama-index==0.12.17
+          llama-index==0.12.18
+          llama-index==0.12.19
+          llama-index==0.12.20
+          llama-index==0.12.21
+          llama-index==0.12.22
+          llama-index==0.12.23
+          llama-index==0.12.24
+          llama-index==0.12.25
+          llama-index==0.12.26
+          llama-index==0.12.27
+          llama-index==0.12.28
+          llama-index==0.12.29
+          llama-index==0.12.30
+          llama-index==0.12.31
+          llama-index==0.12.32
+          llama-index==0.12.33
+          llama-index==0.12.34
+          llama-index==0.12.35
+          llama-index==0.12.36
+          llama-index==0.12.37
+          llama-index==0.12.38
+          llama-index==0.12.39
+          llama-index==0.12.40
+          llama-index==0.12.41
+          llama-index==0.12.42
+          llama-index==0.12.43
+          llama-index==0.12.44
+          llama-index==0.12.45
+          llama-index==0.12.46
+          llama-index==0.12.47
+          llama-index==0.12.48
+          llama-index==0.12.49
+          llama-index==0.12.50
+          llama-index==0.12.51
+          llama-index==0.12.52
+          llama-index==0.13.0
+          llama-index==0.13.1
+          llama-index==0.13.2
+          llama-index==0.13.3
+          llama-index==0.13.4
+          llama-index==0.13.5
+          llama-index==0.13.6
+          llama-index==0.14.0
+          llama-index==0.14.1
+          llama-index==0.14.2
+          llama-index==0.14.3
+          llama-index==0.14.4
+          llama-index==0.14.5
+      and llama-index==0.11.15 depends on llama-index-core>=0.11.15,<0.12.0,
+      we can conclude that llama-index>=0.11.15,<0.11.16 depends on
+      llama-index-core>=0.11.15,<0.12.0.
+      And because llama-index==0.11.16 depends on
+      llama-index-core>=0.11.16,<0.12.0, we can conclude
+      that llama-index>=0.11.15,<0.11.17 depends on
+      llama-index-core>=0.11.15,<0.12.0.
+      And because llama-index==0.11.17 depends on
+      llama-index-core>=0.11.17,<0.12.0 and llama-index-core>=0.11.18,<0.12.0,
+      we can conclude that llama-index>=0.11.15,<0.11.19 depends on
+      llama-index-core>=0.11.15,<0.12.0.
+      And because llama-index==0.11.19 depends on
+      llama-index-core>=0.11.19,<0.12.0 and llama-index-core>=0.11.20,<0.12.0,
+      we can conclude that llama-index>=0.11.15,<0.11.22 depends on
+      llama-index-core>=0.11.15,<0.12.0.
+      And because llama-index==0.11.22 depends
+      on llama-index-core>=0.11.22,<0.12.0 and
+      llama-index-llms-openai>=0.4.0,<0.5, we can conclude that all of:
+          llama-index>=0.11.15,<0.11.23
+          llama-index>0.12.38,<0.13.0
+      , all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0
+      , all of:
+          llama-index-llms-openai<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index>=0.12.0,<=0.12.38 depends on
+      llama-index-llms-openai>=0.3.0,<0.4.0 and llama-index-core>=0.14.4, we
+      can conclude that all of:
+          llama-index>=0.11.15,<0.11.23
+          llama-index>0.11.23,<0.13.0
+          llama-index>0.14.3,<0.14.5
+      , all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0,<0.14.4
+      , all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index==0.14.3 depends on llama-index-core>=0.14.3 and
+      llama-index-core>=0.14.2, we can conclude that all of:
+          llama-index>=0.11.15,<0.11.23
+          llama-index>0.11.23,<0.13.0
+          llama-index>0.14.1,<0.14.5
+      , all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0,<0.14.2
+      , all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index==0.14.1 depends on llama-index-core>=0.14.1 and
+      llama-index-core>=0.13.6, we can conclude that all of:
+          llama-index>=0.11.15,<0.11.23
+          llama-index>0.11.23,<0.13.0
+          llama-index>0.13.6,<0.14.5
+      , all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0,<0.13.6
+      , all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index==0.13.6 depends on
+      llama-index-core>=0.13.6,<0.14 and llama-index-core>=0.13.5,<0.14, we
+      can conclude that all of:
+          llama-index>=0.11.15,<0.11.23
+          llama-index>0.11.23,<0.13.0
+          llama-index>0.13.4,<0.14.5
+      , all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0,<0.13.5
+      , all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index==0.13.4 depends on
+      llama-index-core>=0.13.4,<0.14 and llama-index-core>=0.13.3,<0.14, we
+      can conclude that all of:
+          llama-index>=0.11.15,<0.11.23
+          llama-index>0.11.23,<0.13.0
+          llama-index>0.13.2,<0.14.5
+      , all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0,<0.13.3
+      , all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index==0.13.2 depends on
+      llama-index-core>=0.13.2,<0.14 and llama-index-core>=0.13.1,<0.14, we
+      can conclude that all of:
+          llama-index>=0.11.15,<0.11.23
+          llama-index>0.11.23,<0.13.0
+          llama-index>0.13.0,<0.14.5
+      , all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0,<0.13.1
+      , all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index==0.13.0 depends on
+      llama-index-core>=0.13.0,<0.14 and llama-index-core>=0.11.23,<0.12.0, we
+      can conclude that llama-index>=0.11.15,<0.14.5, all of:
+          llama-index-core<0.11.15
+          llama-index-core>=0.12.0,<0.13.0
+      , all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index-finetuning>=0.3.0,<=0.3.2 depends on
+      llama-index-core>=0.12.0,<0.13.0 and only the following versions of
+      llama-index-finetuning are available:
+          llama-index-finetuning<=0.3.0
+          llama-index-finetuning==0.3.1
+          llama-index-finetuning==0.3.2
+          llama-index-finetuning>0.4.0
+      we can conclude that llama-index>=0.11.15,<0.14.5,
+      llama-index-finetuning>=0.3.0,<0.4.0, all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5
+       are incompatible.
+      And because llama-index==0.14.5 depends on
+      llama-index-llms-openai>=0.6.0,<0.7 and your project depends
+      on llama-index>=0.11.15, we can conclude that your project,
+      llama-index-finetuning>=0.3.0,<0.4.0, all of:
+          llama-index-llms-openai<0.3.0
+          llama-index-llms-openai>=0.4.0,<0.4.0
+          llama-index-llms-openai>=0.5,<0.6.0
+          llama-index-llms-openai>=0.7
+       are incompatible.
+      And because your project depends on llama-index-finetuning>=0.3.0,<0.4.0
+      and llama-index-llms-openai>=0.2.10,<0.3.0, we can conclude that your
+      project's requirements are unsatisfiable.
