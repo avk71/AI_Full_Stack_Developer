@@ -23,13 +23,15 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+      SUPABASE_ADMIN_PASSWORD: ${SUPABASE_ADMIN_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init/01-initial-schema.sql:/docker-entrypoint-initdb.d/01-initial-schema.sql
-      - ./init/02-auth-schema.sql:/docker-entrypoint-initdb.d/02-auth-schema.sql
-      - ./init/03-storage-schema.sql:/docker-entrypoint-initdb.d/03-storage-schema.sql
-      - ./init/04-vector-schema.sql:/docker-entrypoint-initdb.d/04-vector-schema.sql
-      - ./init/05-seed-data.sql:/docker-entrypoint-initdb.d/05-seed-data.sql
+      - /opt/stacks/apps/database/supabase/init/00-create-supabase-admin.sql:/docker-entrypoint-initdb.d/00-create-supabase-admin.sql
+      - /opt/stacks/apps/database/supabase/init/01-initial-schema.sql:/docker-entrypoint-initdb.d/01-initial-schema.sql
+      - /opt/stacks/apps/database/supabase/init/02-auth-schema.sql:/docker-entrypoint-initdb.d/02-auth-schema.sql
+      - /opt/stacks/apps/database/supabase/init/03-storage-schema.sql:/docker-entrypoint-initdb.d/03-storage-schema.sql
+      - /opt/stacks/apps/database/supabase/init/04-vector-schema.sql:/docker-entrypoint-initdb.d/04-vector-schema.sql
+      - /opt/stacks/apps/database/supabase/init/05-seed-data.sql:/docker-entrypoint-initdb.d/05-seed-data.sql
     ports:
       - "${amnezia}:${POSTGRES_EXTERNAL_PORT}:5432"
     networks:
@@ -283,7 +285,7 @@ services:
       DB_HOST: ${POSTGRES_HOST}
       DB_PORT: ${POSTGRES_PORT}
       DB_USER: supabase_admin
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_PASSWORD: ${SUPABASE_ADMIN_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
       DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
       DB_ENC_KEY: supabaserealtime

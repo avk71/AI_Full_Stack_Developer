@@ -10,7 +10,7 @@
 CREATE EXTENSION IF NOT EXISTS "vector";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "pgjwt";
+-- CREATE EXTENSION IF NOT EXISTS "pgjwt";  -- Not available in this PostgreSQL image
 
 -- Create auth schema and tables
 \echo 'Creating auth schema...'
@@ -121,10 +121,6 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
         CREATE ROLE service_role;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_admin') THEN
-        CREATE ROLE supabase_admin;
     END IF;
 END $$;
 
