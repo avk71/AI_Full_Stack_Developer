@@ -1,0 +1,515 @@
+# version: '3.8'
+
+services:
+  # =============================================
+  # PostgreSQL 17 with pgvector Extension
+  # =============================================
+  # WHAT: Main database server with vector support
+  # PURPOSE: Stores both relational data and AI/ML embeddings
+  # USEFUL FOR:
+  #   - Traditional SQL operations (users, projects, analytics)
+  #   - Vector similarity search for AI/RAG applications
+  #   - Direct connections from DBeaver, pgAdmin, applications
+  #   - Combines relational and vector database in single instance
+  # SCHEMAS: public (your data), vectors (AI embeddings), auth (users), storage (files)
+  # EXTERNAL ACCESS: Port 5432 for direct database connections
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: supabase_postgres_17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init/01-initial-schema.sql:/docker-entrypoint-initdb.d/01-initial-schema.sql
+      - ./init/02-auth-schema.sql:/docker-entrypoint-initdb.d/02-auth-schema.sql
+      - ./init/03-storage-schema.sql:/docker-entrypoint-initdb.d/03-storage-schema.sql
+      - ./init/04-vector-schema.sql:/docker-entrypoint-initdb.d/04-vector-schema.sql
+      - ./init/05-seed-data.sql:/docker-entrypoint-initdb.d/05-seed-data.sql
+    ports:
+      - "${amnezia}:${POSTGRES_EXTERNAL_PORT}:5432"
+    networks:
+      - supabase_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - default_statistics_target=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - work_mem=4MB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - log_statement=mod
+      - -c
+      - log_min_duration_statement=1000ms
+      - -c
+      - shared_preload_libraries=vector
+    deploy:
+      resources:
+        limits:
+          memory: ${POSTGRES_MEMORY_LIMIT}
+        reservations:
+          memory: ${POSTGRES_MEMORY_RESERVATION}
+
+  # =============================================
+  # Supabase Studio - Web Dashboard
+  # =============================================
+  # WHAT: Web-based database management interface
+  # PURPOSE: Visual database administration and development tool
+  # USEFUL FOR:
+  #   - Browse and edit database tables through web UI
+  #   - Run SQL queries with syntax highlighting and results
+  #   - Manage user authentication and permissions
+  #   - Configure Row Level Security (RLS) policies
+  #   - Upload and manage files in storage buckets
+  #   - View API documentation and test endpoints
+  #   - Monitor database performance and logs
+  #   - Deploy and manage Edge Functions (serverless)
+  # ACCESS: http://your-server-ip:3000
+  # ALTERNATIVE TO: pgAdmin, DBeaver (but Supabase-specific features)
+  studio:
+    # image: supabase/studio:20241103-ce42139
+    image: supabase/studio:latest
+    container_name: supabase_studio
+    restart: unless-stopped
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION}
+      DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_REST_URL: ${PUBLIC_REST_URL}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      LOGFLARE_API_KEY: ${LOGFLARE_API_KEY}
+      LOGFLARE_URL: http://analytics:4000
+      NEXT_PUBLIC_ENABLE_LOGS: true
+      NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
+    ports:
+      - "${amnezia}:${STUDIO_PORT}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meta:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    networks:
+      - supabase_net
+
+  # =============================================
+  # Kong API Gateway - Central API Router
+  # =============================================
+  # WHAT: API gateway that routes requests to backend services
+  # PURPOSE: Single entry point for all Supabase APIs with security
+  # USEFUL FOR:
+  #   - Routes /rest/v1/* to PostgREST (auto-generated REST API)
+  #   - Routes /auth/v1/* to GoTrue (authentication service)
+  #   - Routes /storage/v1/* to Storage API (file operations)
+  #   - Routes /realtime/v1/* to Realtime (WebSocket subscriptions)
+  #   - Handles CORS, authentication, rate limiting
+  #   - JWT token validation and user context injection
+  #   - Load balancing and SSL termination capabilities
+  # ACCESS: http://your-server-ip:8000 (main API endpoint)
+  # CLIENT USAGE: All Supabase client SDKs connect through Kong
+  kong:
+    image: kong:2.8.1
+    container_name: supabase_kong
+    restart: unless-stopped
+    ports:
+      - "${amnezia}:${KONG_HTTP_PORT}:8000/tcp"
+      - "${amnezia}:${KONG_HTTPS_PORT}:8443/tcp"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+    volumes:
+      - kong_config:/var/lib/kong:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - supabase_net
+
+  # =============================================
+  # GoTrue Authentication Service
+  # =============================================
+  # WHAT: Complete user authentication and authorization system
+  # PURPOSE: Handles all user management and security operations
+  # USEFUL FOR:
+  #   - User registration and login (email/password, magic links)
+  #   - OAuth integration (Google, GitHub, Facebook, etc.)
+  #   - JWT token generation and validation
+  #   - Password reset and email confirmation flows
+  #   - Multi-factor authentication (MFA) support
+  #   - User metadata and profile management
+  #   - Phone number authentication (SMS)
+  #   - Session management and refresh tokens
+  # API ENDPOINTS: /auth/v1/* (signup, login, user, logout, etc.)
+  # INTEGRATES WITH: Row Level Security policies in PostgreSQL
+  auth:
+    image: supabase/gotrue:v2.143.0
+    container_name: supabase_auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?search_path=auth&sslmode=disable
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP}
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
+      GOTRUE_MAILER_URLPATHS_INVITE: "${MAILER_URLPATHS_INVITE}"
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: "${MAILER_URLPATHS_CONFIRMATION}"
+      GOTRUE_MAILER_URLPATHS_RECOVERY: "${MAILER_URLPATHS_RECOVERY}"
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: "${MAILER_URLPATHS_EMAIL_CHANGE}"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
+      GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
+    networks:
+      - supabase_net
+
+  # =============================================
+  # PostgREST - Auto-Generated REST API
+  # =============================================
+  # WHAT: Automatically generates REST API from PostgreSQL schema
+  # PURPOSE: Instant REST API for all your database tables and functions
+  # USEFUL FOR:
+  #   - CRUD operations on any table via HTTP (GET, POST, PATCH, DELETE)
+  #   - Complex queries with filtering, sorting, pagination
+  #   - Call PostgreSQL functions as API endpoints
+  #   - Vector similarity search API endpoints
+  #   - Bulk operations and transactions
+  #   - OpenAPI documentation auto-generation
+  #   - Row Level Security enforcement at API level
+  # API ENDPOINTS: /rest/v1/* (tables, functions, views, stored procedures)
+  # EXAMPLES: GET /rest/v1/users, POST /rest/v1/projects,
+  #           POST /rest/v1/rpc/search_embeddings_cosine
+  rest:
+    image: postgrest/postgrest:v12.2.0
+    container_name: supabase_rest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
+    # PostgREST binary runs directly
+    # command: ["/bin/postgrest"]
+    networks:
+      - supabase_net
+
+  # =============================================
+  # Realtime - Live Data Subscriptions
+  # =============================================
+  # WHAT: WebSocket server for real-time database subscriptions
+  # PURPOSE: Enables live updates when database changes occur
+  # USEFUL FOR:
+  #   - Live chat applications and messaging systems
+  #   - Real-time dashboards and analytics displays
+  #   - Collaborative editing (documents, whiteboards)
+  #   - Live notifications and activity feeds
+  #   - Gaming leaderboards and multiplayer features
+  #   - IoT sensor data streaming and monitoring
+  #   - Live comments, likes, and social interactions
+  # CONNECTION: WebSocket to /realtime/v1/websocket
+  # FEATURES: Subscribe to INSERT, UPDATE, DELETE on any table
+  #           Presence tracking (who's online), broadcast messages
+  realtime:
+    image: supabase/realtime:v2.27.5
+    container_name: supabase_realtime
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${JWT_SECRET}
+      FLY_ALLOC_ID: fly123
+      FLY_APP_NAME: realtime
+      SECRET_KEY_BASE: UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq
+      ERL_AFLAGS: -proto_dist inet_tcp
+      ENABLE_TAILSCALE: "false"
+      DNS_NODES: "''"
+    # Default command - let the container handle its own startup
+    # The supabase/realtime image should have proper entrypoint configured
+    networks:
+      - supabase_net
+
+  # =============================================
+  # Storage API - File Management System
+  # =============================================
+  # WHAT: Complete file upload, storage, and management service
+  # PURPOSE: Handle file operations with security and transformations
+  # USEFUL FOR:
+  #   - User avatar and profile picture uploads
+  #   - Document storage (PDFs, Word docs, spreadsheets)
+  #   - Media files (images, videos, audio)
+  #   - Application assets and static files
+  #   - Resume/CV uploads and portfolio files
+  #   - Image resizing and format conversion on-the-fly
+  #   - File access control with Row Level Security
+  # API ENDPOINTS: /storage/v1/* (upload, download, list, delete)
+  # FEATURES: Automatic image transformation, CDN-like serving,
+  #           bucket-based organization, access policies
+  storage:
+    # image: supabase/storage-api:v1.0.6
+    image: supabase/storage-api:latest
+    container_name: supabase_storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    restart: unless-stopped
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://imgproxy:5001
+    volumes:
+      - storage_data:/var/lib/storage:z
+    networks:
+      - supabase_net
+
+  # =============================================
+  # ImgProxy - Image Transformation Service
+  # =============================================
+  # WHAT: High-performance image processing and transformation service
+  # PURPOSE: On-the-fly image resizing, format conversion, optimization
+  # USEFUL FOR:
+  #   - Automatic image resizing for different screen sizes
+  #   - Format conversion (JPEG, PNG, WebP, AVIF)
+  #   - Image compression and optimization for faster loading
+  #   - Thumbnail generation for galleries and previews
+  #   - Responsive images for mobile and desktop
+  #   - CDN-like image serving with caching headers
+  #   - Watermark and overlay application
+  # INTEGRATION: Works with Storage API to transform uploaded images
+  # EXAMPLES: /storage/v1/object/public/avatars/user.jpg?width=150&height=150
+  imgproxy:
+    image: darthsim/imgproxy:v3.8.0
+    container_name: supabase_imgproxy
+    healthcheck:
+      test: [ "CMD", "imgproxy", "health" ]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_ENABLE_WEBP_DETECTION: ${IMGPROXY_ENABLE_WEBP_DETECTION}
+    volumes:
+      - storage_data:/var/lib/storage:z
+    networks:
+      - supabase_net
+
+  # =============================================
+  # PostgreSQL Meta - Database Introspection API
+  # =============================================
+  # WHAT: Service that provides metadata about PostgreSQL database structure
+  # PURPOSE: Powers Supabase Studio's database exploration and management
+  # USEFUL FOR:
+  #   - Table schema information and column details
+  #   - Relationship discovery and foreign key mapping
+  #   - Index information and performance insights
+  #   - Function and stored procedure documentation
+  #   - Database statistics and table sizes
+  #   - Real-time schema changes reflection in Studio UI
+  #   - Auto-completion in Studio SQL editor
+  # INTERNAL SERVICE: Used by Studio, not directly accessed by applications
+  # API: Provides JSON metadata about database structure
+  meta:
+    image: supabase/postgres-meta:v0.80.0
+    container_name: supabase_meta
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: ${POSTGRES_HOST}
+      PG_META_DB_PORT: ${POSTGRES_PORT}
+      PG_META_DB_NAME: ${POSTGRES_DB}
+      PG_META_DB_USER: ${POSTGRES_USER}
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    # Removed health check - Meta service works fine without strict health monitoring
+    # healthcheck:
+    #   test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 30s
+    networks:
+      - supabase_net
+
+  # =============================================
+  # Logflare Analytics - Logging and Monitoring
+  # =============================================
+  # WHAT: Real-time log aggregation and analytics platform
+  # PURPOSE: Centralized logging, monitoring, and observability
+  # USEFUL FOR:
+  #   - Application and database query logging
+  #   - Performance monitoring and slow query detection
+  #   - Error tracking and debugging assistance
+  #   - User activity analytics and usage patterns
+  #   - API request monitoring and rate limiting insights
+  #   - Custom event tracking and business metrics
+  #   - Real-time log streaming and alerts
+  # ACCESS: http://your-server-ip:4000 (web interface)
+  # FEATURES: Log search, filtering, dashboards, alerting
+  # INTEGRATION: Collects logs from all Supabase services automatically
+  analytics:
+    image: supabase/logflare:1.4.0
+    container_name: supabase_analytics
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LOGFLARE_NODE_HOST: 127.0.0.1
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_HOSTNAME: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SCHEMA: _analytics
+      LOGFLARE_API_KEY: ${LOGFLARE_API_KEY}
+      LOGFLARE_SINGLE_TENANT: true
+      LOGFLARE_SUPABASE_MODE: true
+      LOGFLARE_MIN_CLUSTER_SIZE: 1
+      RELEASE_COOKIE: cookie
+    networks:
+      - supabase_net
+    ports:
+      - "${amnezia}:${LOGFLARE_PORT}:4000"
+    # Remove problematic health check that was blocking other services
+    # healthcheck:
+    #   test: [ "CMD", "curl", "http://localhost:4000/health" ]
+    #   timeout: 5s
+    #   interval: 5s
+    #   retries: 10
+
+  # =============================================
+  # Edge Runtime - Serverless Function Executor
+  # =============================================
+  # WHAT: Runtime environment for executing serverless Edge Functions
+  # PURPOSE: Execute custom server-side logic and API endpoints
+  # USEFUL FOR:
+  #   - Custom API endpoints with complex business logic
+  #   - AI/ML model inference and vector processing
+  #   - Third-party API integrations and webhooks
+  #   - Data validation and transformation pipelines
+  #   - Custom authentication and authorization logic
+  #   - Email sending and notification services
+  #   - Background job processing and cron tasks
+  # DEPLOYMENT: Functions deployed via Supabase CLI or Studio
+  # RUNTIME: Supports TypeScript/JavaScript with Web APIs
+  # CONTEXT: Has access to Supabase services (DB, Auth, Storage)
+  vector_service:
+    # image: supabase/edge-runtime:v1.58.2
+    image: supabase/edge-runtime:v1.45.2
+    container_name: supabase_vector_service
+    restart: unless-stopped
+    environment:
+      - SUPABASE_URL=http://kong:8000
+      - SUPABASE_ANON_KEY=${ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kong:
+        condition: service_started
+    networks:
+      - supabase_net
+
+volumes:
+  postgres_data:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/stacks/apps/database/supabase/postgres_data
+  storage_data:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/stacks/apps/database/supabase/storage_data
+  kong_config:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/stacks/apps/database/supabase/kong_config
+
+networks:
+  supabase_net:
+    driver: bridge

@@ -1,0 +1,50 @@
+# Alternative stable image versions for docker-compose.yml
+# Use these if the current versions fail
+
+# =================================
+# STABLE IMAGE VERSIONS (Fallback)
+# =================================
+
+# PostgreSQL - Keep current (stable)
+postgres: pgvector/pgvector:pg17
+
+# Studio - Use latest stable
+studio: supabase/studio:latest
+
+# Kong - Keep current (stable)
+kong: kong:2.8.1
+
+# Auth - Use latest stable
+auth: supabase/gotrue:latest
+
+# REST API - Use stable v12
+rest: postgrest/postgrest:v12.0.2
+
+# Realtime - Use stable v2
+realtime: supabase/realtime:latest
+
+# Storage - Use latest stable
+storage: supabase/storage-api:latest
+
+# ImgProxy - Keep current (stable)
+imgproxy: darthsim/imgproxy:v3.8.0
+
+# Meta - Use latest stable
+meta: supabase/postgres-meta:latest
+
+# Analytics - Keep current (stable)
+analytics: supabase/logflare:1.4.0
+
+# Edge Runtime - Use latest stable
+vector_service: supabase/edge-runtime:latest
+
+# =================================
+# UPDATE INSTRUCTIONS
+# =================================
+
+# If deployment fails, replace the image tags in docker-compose.yml
+# Example:
+# FROM: image: supabase/studio:20241103-ce42139
+# TO:   image: supabase/studio:latest
+
+# Then re-deploy the stack in Portainer

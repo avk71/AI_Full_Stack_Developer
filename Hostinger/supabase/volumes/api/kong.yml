@@ -1,0 +1,185 @@
+_format_version: "2.1"
+_transform: true
+
+services:
+  # Email confirmation and verification endpoint (public access)
+  - name: auth-v1-open
+    url: http://auth:9999/verify
+    protocol: http
+    host: auth
+    port: 9999
+    path: /verify
+    routes:
+      - name: auth-v1-open
+        strip_path: true
+        paths:
+          - /auth/v1/verify
+    plugins:
+      - name: cors
+
+  # OAuth callback endpoint for third-party auth providers (Google, GitHub, etc.)
+  - name: auth-v1-open-callback
+    url: http://auth:9999/callback
+    protocol: http
+    host: auth
+    port: 9999
+    path: /callback
+    routes:
+      - name: auth-v1-open-callback
+        strip_path: true
+        paths:
+          - /auth/v1/callback
+    plugins:
+      - name: cors
+
+  # OAuth authorization endpoint for initiating third-party login flows
+  - name: auth-v1-open-authorize
+    url: http://auth:9999/authorize
+    protocol: http
+    host: auth
+    port: 9999
+    path: /authorize
+    routes:
+      - name: auth-v1-open-authorize
+        strip_path: true
+        paths:
+          - /auth/v1/authorize
+    plugins:
+      - name: cors
+
+  # Main authentication API - signup, login, user management (JWT protected)
+  - name: auth-v1
+    _comment: "Auth: /auth/v1/* -> http://auth:9999/*"
+    url: http://auth:9999/
+    protocol: http
+    host: auth
+    port: 9999
+    path: /
+    routes:
+      - name: auth-v1-all
+        strip_path: true
+        paths:
+          - /auth/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: false
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  # Auto-generated REST API from PostgreSQL schema (CRUD + functions)
+  - name: rest-v1
+    _comment: "REST: /rest/v1/* -> http://rest:3000/*"
+    url: http://rest:3000/
+    protocol: http
+    host: rest
+    port: 3000
+    path: /
+    routes:
+      - name: rest-v1-all
+        strip_path: true
+        paths:
+          - /rest/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  # WebSocket connections for real-time database subscriptions
+  - name: realtime-v1
+    _comment: "Realtime: /realtime/v1/* -> ws://realtime:4000/socket/*"
+    url: http://realtime:4000/socket/
+    protocol: http
+    host: realtime
+    port: 4000
+    path: /socket/
+    routes:
+      - name: realtime-v1-all
+        strip_path: true
+        paths:
+          - /realtime/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: false
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  # File upload, download, and management API with image transformations
+  - name: storage-v1
+    _comment: "Storage: /storage/v1/* -> http://storage:5000/*"
+    url: http://storage:5000/
+    protocol: http
+    host: storage
+    port: 5000
+    path: /
+    routes:
+      - name: storage-v1-all
+        strip_path: true
+        paths:
+          - /storage/v1/
+    plugins:
+      - name: cors
+
+# API consumers with JWT authentication keys
+consumers:
+  # Anonymous access consumer (public API calls)
+  - username: anon
+    keyauth_credentials:
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+    acls:
+      - group: anon
+  # Service role consumer (backend/admin operations)
+  - username: service_role
+    keyauth_credentials:
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+    acls:
+      - group: admin
+
+# Global CORS plugin for cross-origin requests
+plugins:
+  # Global CORS configuration for all API endpoints
+  - name: cors
+    config:
+      origins:
+        - "*"
+      methods:
+        - GET
+        - HEAD
+        - PUT
+        - PATCH
+        - POST
+        - DELETE
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - X-Auth-Token
+        - Authorization
+        - X-Authorization
+        - apikey
+        - Range
+      exposed_headers:
+        - X-Auth-Token
+      credentials: true
+      max_age: 3600

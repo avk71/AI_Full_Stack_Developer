@@ -1,0 +1,132 @@
+# Kong Gateway Configuration for Supabase
+# This file defines API routes and plugins for Supabase services
+
+_format_version: "2.1"
+
+# Upstream services that Kong will proxy to
+services:
+  # Authentication service (public routes)
+  - name: auth-v1-open
+    url: http://auth:9999/verify
+
+  - name: auth-v1-open-callback
+    url: http://auth:9999/callback
+
+  - name: auth-v1-open-authorize
+    url: http://auth:9999/authorize
+
+  # Main authentication service
+  - name: auth-v1
+    url: http://auth:9999/
+
+  # PostgREST - Database REST API
+  - name: rest-v1
+    url: http://rest:3000/
+
+  # Realtime WebSocket service
+  - name: realtime-v1
+    url: http://realtime:4000/socket/
+
+  # Storage API - File management
+  - name: storage-v1
+    url: http://storage:5000/
+
+  # PostgreSQL Meta - Database introspection
+  - name: meta-v1
+    url: http://meta:8080/
+
+  # Edge Functions - Serverless runtime
+  - name: functions-v1
+    url: http://vector_service:9000/
+
+# Route definitions - how URLs map to services
+routes:
+  # Authentication routes (public)
+  - name: auth-v1-verify
+    service: auth-v1-open
+    strip_path: true
+    paths:
+      - /auth/v1/verify
+
+  - name: auth-v1-callback
+    service: auth-v1-open-callback
+    strip_path: true
+    paths:
+      - /auth/v1/callback
+
+  - name: auth-v1-authorize
+    service: auth-v1-open-authorize
+    strip_path: true
+    paths:
+      - /auth/v1/authorize
+
+  # Authentication routes (protected)
+  - name: auth-v1-all
+    service: auth-v1
+    strip_path: true
+    paths:
+      - /auth/v1/
+
+  # Database REST API
+  - name: rest-v1-all
+    service: rest-v1
+    strip_path: true
+    paths:
+      - /rest/v1/
+
+  # Realtime WebSocket
+  - name: realtime-v1-all
+    service: realtime-v1
+    strip_path: true
+    paths:
+      - /realtime/v1/
+
+  # Storage API
+  - name: storage-v1-all
+    service: storage-v1
+    strip_path: true
+    paths:
+      - /storage/v1/
+
+  # Database Meta
+  - name: meta-v1-all
+    service: meta-v1
+    strip_path: true
+    paths:
+      - /pg/
+
+  # Edge Functions
+  - name: functions-v1-all
+    service: functions-v1
+    strip_path: true
+    paths:
+      - /functions/v1/
+
+# Global plugins
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "*"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+        - HEAD
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - Authorization
+        - X-Client-Info
+        - apikey
+      exposed_headers:
+        - X-Request-Id
+      credentials: true
+      max_age: 3600
