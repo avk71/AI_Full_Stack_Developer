@@ -1,4 +1,70 @@
-# Supabase Stack with PostgreSQL 17 & Vector Support
+# Self-Hosted Supabase Stack
+
+## Overview
+
+This directory contains a complete self-hosted Supabase deployment using Docker Compose, including PostgreSQL 17 with pgvector extension for AI/ML applications.
+
+## 📁 Project Structure
+
+```
+/home/andy/_projects/AI_Full_Stack_Developer/Hostinger/supabase/
+├── docker-compose.yml          # Main orchestration file
+├── stack.env                   # Environment configuration
+├── kong.yml                    # Kong API Gateway config
+├── reset-and-deploy.sh         # Automated deployment script
+├── init/                       # Database initialization scripts
+│   ├── 00-create-supabase-admin.sql
+│   ├── 01-initial-schema.sql
+│   ├── 02-auth-schema.sql
+│   ├── 03-storage-schema.sql
+│   ├── 04-vector-schema.sql
+│   └── 05-seed-data.sql
+└── docs/                       # Documentation
+    ├── DEPLOYMENT.md
+    ├── DEPLOYMENT-STATUS.md
+    ├── TROUBLESHOOTING.md
+    └── API-REFERENCE.md
+```
+
+## 🚀 Quick Start
+
+1. **Deploy the stack:**
+   ```bash
+   ./reset-and-deploy.sh
+   ```
+
+2. **Start via Portainer:**
+   - Navigate to Portainer UI
+   - Deploy the stack using docker-compose.yml
+
+3. **Access services:**
+   - Studio: http://172.29.172.1:3000
+   - API: http://172.29.172.1:8000
+   - Database: 172.29.172.1:5432
+
+## 🔐 Credentials
+
+- **Database Admin:** `supabase_admin` / `HWcns2tWSTXEWRwUGTtsTDfBM9vyCMdn`
+- **PostgreSQL User:** `postgres` / `XtrUS1I6ZoBZWlGETTJMJ6Yz6dSPdhm8`
+
+## 📚 Documentation
+
+- [Deployment Guide](./docs/DEPLOYMENT.md) - Complete setup instructions
+- [Current Status](./docs/DEPLOYMENT-STATUS.md) - Deployment achievements and current state
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [API Reference](./docs/API-REFERENCE.md) - Service endpoints and usage
+
+## 🎯 Current Status: OPERATIONAL ✅
+
+Core services are running and functional:
+- ✅ PostgreSQL 17 + pgvector (healthy)
+- ✅ Authentication service (44/44 migrations applied)
+- ✅ Kong API Gateway (routing correctly)
+- ✅ PostgREST API (responding)
+- ✅ Storage & Realtime services (operational)
+- ✅ Studio UI (accessible)
+
+See [DEPLOYMENT-STATUS.md](./docs/DEPLOYMENT-STATUS.md) for detailed status and achievements.
 
 A complete Supabase deployment with PostgreSQL 17, pgvector extension, and full vector database capabilities for Portainer on Ubuntu.
 
